@@ -59,7 +59,7 @@ describe("GET /hotels", () => {
 
       expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
-    it ("should respond with status 402 when user doenst have paid for the ticket yet", async () => {
+    it ("should respond with status 409 when user doenst have paid for the ticket yet", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -67,7 +67,7 @@ describe("GET /hotels", () => {
       await createTicket(enrollment.id, ticketType.id, TicketStatus.RESERVED);
 
       const response = await server.get("/hotels").set("Authorization", `Bearer ${token}`);
-      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
+      expect(response.status).toEqual(httpStatus.CONFLICT);
     });
     it ("should respond with status 409 when ticket is remote", async () => {
       const user = await createUser();
@@ -150,7 +150,7 @@ describe("GET /hotels/:hotelId", () => {
 
       expect(response.status).toEqual(httpStatus.NOT_FOUND);
     });
-    it ("should respond with status 402 when user doenst have paid for the ticket yet", async () => {
+    it ("should respond with status 409 when user doenst have paid for the ticket yet", async () => {
       const user = await createUser();
       const token = await generateValidToken(user);
       const enrollment = await createEnrollmentWithAddress(user);
@@ -158,7 +158,7 @@ describe("GET /hotels/:hotelId", () => {
       await createTicket(enrollment.id, ticketType.id, TicketStatus.RESERVED);
 
       const response = await server.get("/hotels/:hotelId").set("Authorization", `Bearer ${token}`);
-      expect(response.status).toEqual(httpStatus.PAYMENT_REQUIRED);
+      expect(response.status).toEqual(httpStatus.CONFLICT);
     });
     it ("should respond with status 409 when ticket is remote", async () => {
       const user = await createUser();
@@ -201,21 +201,23 @@ describe("GET /hotels/:hotelId", () => {
       const response = await server.get(`/hotels/${hotel.id}`).set("Authorization", `Bearer ${token}`);
 
       expect(response.status).toEqual(httpStatus.OK);
-      expect(response.body).toEqual([{
-        id: rooms.id,
-        name: rooms.name,
-        hotelId: rooms.hotelId,
-        capacity: rooms.capacity,
-        createdAt: rooms.createdAt.toISOString(),
-        updatedAt: rooms.updatedAt.toISOString(),
-        Hotel: {
+      expect(response.body).toEqual(
+        
+        {
           id: hotel.id,
           name: hotel.name,
           image: hotel.image,
           createdAt: hotel.createdAt.toISOString(),
           updatedAt: hotel.updatedAt.toISOString(),
-        }
-      }]);
+          Rooms: [{
+            id: rooms.id,
+            name: rooms.name,
+            hotelId: rooms.hotelId,
+            capacity: rooms.capacity,
+            createdAt: rooms.createdAt.toISOString(),
+            updatedAt: rooms.updatedAt.toISOString(),
+          }],
+        });
     });
   });
 });
